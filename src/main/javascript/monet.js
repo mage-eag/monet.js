@@ -436,11 +436,11 @@
         orElse: function (maybe) {
             return this.isValue ? this : maybe
         },
-        ap: function (maybeWithFunction) {
-            var value = this.val
-            return this.isValue ? maybeWithFunction.map(function (fn) {
-                return fn(value)
-            }) : this
+        ap: function (maybe) {
+            var value = maybe.val;
+            return maybe.isValue ? this.map(function (fn) {
+                return fn(value);
+            }) : maybe;
         },
 
         toList: function () {
@@ -514,16 +514,16 @@
         bind: function (fn) {
             return this.isSuccess() ? fn(this.val) : this
         },
-        ap: function (validationWithFn) {
-            var value = this.val
-            return this.isSuccess() ?
-                validationWithFn.map(function (fn) {
+        ap: function (validation) {
+            var value = validation.val
+            return validation.isSuccess() ?
+                this.map(function (fn) {
                     return fn(value);
                 })
                 :
-                (validationWithFn.isFail() ?
-                    Validation.Fail(Semigroup.append(value, validationWithFn.fail()))
-                    : this)
+                (this.isFail() ?
+                    Validation.Fail(Semigroup.append(value, this.fail()))
+                    : validation)
         },
         acc: function () {
             var x = function () {
@@ -590,9 +590,9 @@
                 return v.flatMap(fn)
             }))
         },
-        ap: function (monadWithFn) {
-            return monadT(this.monad.flatMap(function (v) {
-                return monadWithFn.perform().map(function (v2) {
+        ap: function (monad) {
+            return monadT(monad.perform().flatMap(function (v) {
+                return this.monad.map(function (v2) {
                     return v.ap(v2)
                 })
             }))
@@ -632,10 +632,9 @@
                 return fn(self.effectFn()).run()
             });
         },
-        ap: function (ioWithFn) {
-            var self = this
-            return ioWithFn.map(function (fn) {
-                return fn(self.effectFn())
+        ap: function (io) {
+            return this.map(function (fn) {
+                return fn(io.effectFn())
             })
         },
         run: function () {
@@ -670,11 +669,10 @@
         bind: function (fn) {
             return this.isRightValue ? fn(this.value) : this
         },
-        ap: function (eitherWithFn) {
-            var self = this
-            return this.isRightValue ? eitherWithFn.map(function (fn) {
-                return fn(self.value)
-            }) : this
+        ap: function (either) {
+            return either.isRightValue ? this.map(function (fn) {
+                return fn(either.value)
+            }) : either
         },
         leftMap: function (fn) {
             return this.isLeft() ? Left(fn(this.value)) : this
@@ -742,11 +740,10 @@
                 return fn(self.run(config)).run(config)
             })
         },
-        ap: function (readerWithFn) {
-            var self = this
-            return readerWithFn.bind(function (fn) {
+        ap: function (reader) {
+            return this.bind(function (fn) {
                 return Reader(function (config) {
-                    return fn(self.run(config))
+                    return fn(reader.run(config))
                 })
             })
         },
